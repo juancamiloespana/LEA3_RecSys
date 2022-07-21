@@ -8,7 +8,6 @@ import a_funciones as fn
 import os  ### para ver y cambiar directorio de trabajo
 
 
-
 os.getcwd()
 os.chdir('d:\\Docencia\\Analítica3\\marketing')
 
@@ -18,8 +17,13 @@ os.chdir('d:\\Docencia\\Analítica3\\marketing')
 conn=sql.connect('db_books2')
 cur=conn.cursor() ###para funciones que ejecutan sql en base de datos
 
-############ cargar tablas ####
 
+### para verificar las tablas que hay disponibles
+cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+print(cur.fetchall())
+
+#######
+############ cargar tablas ####
 
 books= pd.read_sql('select * from books', conn)
 book_ratings = pd.read_sql('select * from book_ratings', conn)
@@ -104,7 +108,7 @@ ratings.info()
 
 #### Explorar tabla completa ---Ejercicios ----
 
-### Libro publicado en 2004 más leido: 0,3 
+### Libro publicado en 2004 más leido: 
 ### Libro mejor calificado: 0,2
 ### Autor más leido 0,2
 ### Editorial más leida 0,2

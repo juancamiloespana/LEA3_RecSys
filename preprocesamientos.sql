@@ -5,12 +5,13 @@
 
 drop table if exists usuarios_sel;
 
-create table usuarios_sel as select "User-Id" as user_id,
-                         count(*) as cnt_rat
-                         from book_ratings
-                         group by "User-Id"
-                         having cnt_rat >10
-                         order by cnt_rat desc ;
+create table usuarios_sel as 
+
+select "User-Id" as user_id, count(*) as cnt_rat
+from book_ratings
+group by "User-Id"
+having cnt_rat >10
+order by cnt_rat desc ;
 
 
 
@@ -55,7 +56,7 @@ drop table if exists books_final;
 
 create table books_final as
 select a.ISBN as isbn,
-a."book-Title"  as book_title,
+a."Book-Title"  as book_title,
 a."Book-Author" as book_author,
 a."Year-Of-Publication" as year_pub,
 a.Publisher as publisher,
