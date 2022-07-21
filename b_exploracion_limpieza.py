@@ -122,3 +122,17 @@ df.to_sql('full_ratings',conn)
 
 pd.read_sql('''
             ''', conn)
+
+
+######para separar géneros en base de datos
+
+from mlxtend.preprocessing import TransactionEncoder
+
+
+conn= sql.connect('db_movies')
+
+movies=pd.read_sql("""select * from movies""", conn)
+genres=movies['genres'].str.split('|')
+te = TransactionEncoder()
+genres = te.fit_transform(genres)
+genres = pd.DataFrame(genres, columns = te.columns_)
