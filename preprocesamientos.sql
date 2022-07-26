@@ -10,7 +10,7 @@ create table usuarios_sel as
 select "User-Id" as user_id, count(*) as cnt_rat
 from book_ratings
 group by "User-Id"
-having cnt_rat >10
+having cnt_rat >50
 order by cnt_rat desc ;
 
 
@@ -24,7 +24,7 @@ create table books_sel as select ISBN,
                          count(*) as cnt_rat
                          from book_ratings
                          group by ISBN
-                         having cnt_rat >10
+                         having cnt_rat >50
                          order by cnt_rat desc ;
 
 
