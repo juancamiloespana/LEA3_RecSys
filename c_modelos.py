@@ -155,7 +155,7 @@ np.set_printoptions(threshold=sys.maxsize)
 predictions_df['uid'].unique()[:20] 
 
 us1=recomendaciones(user_id=179733,n_recomend=20)
-us1
+
 
 
 
