@@ -1,7 +1,7 @@
 
 ----procesamientos---
 
----crear tabla con usuarios con más de 10 libros leídos
+---crear tabla con usuarios con más de 50 libros leídos y menos de 1000
 
 drop table if exists usuarios_sel;
 
@@ -10,12 +10,12 @@ create table usuarios_sel as
 select "User-Id" as user_id, count(*) as cnt_rat
 from book_ratings
 group by "User-Id"
-having cnt_rat >50
+having cnt_rat >50 and cnt_rat <= 1000
 order by cnt_rat desc ;
 
 
 
----crear tabla con libros que han sido leídos por más de 10 usuarios
+---crear tabla con libros que han sido leídos por más de 50 usuarios
 drop table if exists books_sel;
 
 
@@ -82,3 +82,5 @@ c.i_url
  from ratings_final a inner join
  users_final b on a.user_id=b.user_id
  inner join books_final c on a.isbn=c.isbn;
+
+

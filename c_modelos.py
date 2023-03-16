@@ -3,16 +3,7 @@ import pandas as pd
 import sqlite3 as sql
 from sklearn.preprocessing import MinMaxScaler
 from ipywidgets import interact ## para análisis interactivo
-
-####Paquete para sistemas de recomendación surprise
-###Puede generar problemas en instalación local de pyhton. Genera error instalando con pip
-
-from surprise import Reader, Dataset
-from surprise.model_selection import cross_validate, GridSearchCV
-from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline, SVD
-from surprise.model_selection import train_test_split
-
-
+from sklearn import neighbors ### basado en contenido un solo producto consumido
 
 #### conectar_base_de_Datos
 
@@ -24,9 +15,8 @@ cur=conn.cursor()
 cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
 cur.fetchall()
 
-
 #######################################################################
-######## Sistema de recomendación basado en contenido - Manual ########
+######## 2.1 Sistema de recomendación basado en contenido un solo producto - Manual ########
 #######################################################################
 
 books=pd.read_sql('select * from books_final', conn )
@@ -78,83 +68,32 @@ def recomendacion(libro = list(books['book_title'])):
 print(interact(recomendacion))
 
 
-############################################################################
-#####1. Sistema de recomendación filtro colaborativo basado en usuario #####
-############################################################################
+##############################################################################################
+#### 2.1 Sistema de recomendación basado en contenido KNN un solo producto visto #################
+##############################################################################################
+
+##### ### entrenar modelo #####
+
+model = neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
+model.fit(books_dum2)
+dist, idlist = model.kneighbors(books_dum2)
+
+distancias=pd.DataFrame(dist)
+id_list=pd.DataFrame(idlist)
+
+book_name='Violets Are Blue'
+
+def BookRecommender(book_name = list(books['book_title'].value_counts().index)):
+    book_list_name = []
+    book_id = books[books['book_title'] == book_name].index
+    book_id = book_id[0]
+    for newid in idlist[book_id]:
+        book_list_name.append(books.loc[newid].book_title)
+    return book_list_name
 
 
-ratings=pd.read_sql('select * from ratings_final', conn)
 
-###### leer datos desde tabla de pandas
-reader = Reader(rating_scale=(0, 10))
-
-###las columnas deben estar en orden estándar: user item rating
-data   = Dataset.load_from_df(ratings[['user_id','isbn','book_rating']], reader)
-
-
-
-models=[KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
-results = {}
-
-for model in models:
- 
-    CV_scores = cross_validate(model, data, measures=["MAE","RMSE"], cv=5, n_jobs=-1)  
-    result = pd.DataFrame.from_dict(CV_scores).mean(axis=0).\
-             rename({'test_mae':'MAE', 'test_rmse': 'RMSE'})
-    results[str(model).split("algorithms.")[1].split("object ")[0]] = result
-
-
-performance_df = pd.DataFrame.from_dict(results).T
-performance_df.sort_values(by='RMSE')
-
-
-param_grid = { 'sim_options' : {'name': ['msd','cosine'], \
-                                'min_support': [5], \
-                                'user_based': [False, True]}
-             }
-
-gridsearchKNNWithMeans = GridSearchCV(KNNWithMeans, param_grid, measures=['rmse'], \
-                                      cv=2, n_jobs=2)
-                                    
-gridsearchKNNWithMeans.fit(data)
-
-gridsearchKNNWithMeans.best_params["rmse"]
-gridsearchKNNWithMeans.best_score["rmse"]
-
-
-################# Realizar predicciones
-
-trainset = data.build_full_trainset()
-
-
-sim_options       = {'name':'msd','min_support':5,'user_based':True}
-model = KNNWithMeans(sim_options=sim_options)
-model=model.fit(trainset)
-
-
-predset = trainset.build_anti_testset() 
-predictions = model.test(predset) ### función muy pesada
-predictions_df = pd.DataFrame(predictions)
-prediction.shape
-
-def recomendaciones(user_id,n_recomend=10):
-    
-    predictions_userID = predictions_df[predictions_df['uid'] == user_id].\
-                    sort_values(by="est", ascending = False).head(n_recomend)
-
-    recomendados = predictions_userID[['iid','est']]
-    recomendados.to_sql('reco',conn,if_exists="replace")
-    
-    recomendados=pd.read_sql('''select a.*, b.book_title 
-                             from reco a left join books_final b
-                             on a.iid=b.isbn ''', conn)
-
-    return(recomendados)
-
-np.set_printoptions(threshold=sys.maxsize)
-predictions_df['uid'].unique()[:20] 
-
-us1=recomendaciones(user_id=179733,n_recomend=20)
+print(interact(BookRecommender))
 
 
 
