@@ -3,6 +3,7 @@ import pandas as pd
 import sqlite3 as sql
 from sklearn.preprocessing import MinMaxScaler
 from ipywidgets import interact ## para análisis interactivo
+from sklearn import neighbors ### basado en contenido un solo producto consumido
 
 ####Paquete para sistemas de recomendación surprise
 ###Puede generar problemas en instalación local de pyhton. Genera error instalando con pip
@@ -10,7 +11,7 @@ from ipywidgets import interact ## para análisis interactivo
 
 from surprise import Reader, Dataset
 from surprise.model_selection import cross_validate, GridSearchCV
-from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline, SVD
+from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline
 from surprise.model_selection import train_test_split
 
 
@@ -54,8 +55,12 @@ usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',c
 user_id=31226
 def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
+    ###seleccionar solo los ratings del usuario seleccionado
     ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id})
+    ###convertir ratings del usuario a array
     l_books_r=ratings['isbn'].to_numpy()
+    
+    ###agregar la columna de isbn y titulo del libro a dummie para filtrar y mostrar nombre
     books_dum2[['isbn','book_title']]=books[['isbn','book_title']]
     books_r=books_dum2[books_dum2['isbn'].isin(l_books_r)]
     books_r=books_r.drop(columns=['isbn','book_title'])
@@ -75,6 +80,7 @@ def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     return recomend_b
 
+
 recomendar(52853)
 
 
@@ -87,17 +93,26 @@ print(interact(recomendar))
 
 
 ratings=pd.read_sql('select * from ratings_final', conn)
-
+pd.read_sql('select avg(book_rating) from ratings_final', conn) ## promedio de ratings
 ###### leer datos desde tabla de pandas
 reader = Reader(rating_scale=(0, 10))
 
 ###las columnas deben estar en orden estándar: user item rating
 data   = Dataset.load_from_df(ratings[['user_id','isbn','book_rating']], reader)
 
+### los datos se pueden cargar desde un dataframe al formato que reciben las funciones de surprise
 
+#####Existen varios modelos 
 
 models=[KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
 results = {}
+
+###knnBasiscs: calcula el rating ponderando por distancia con usuario/Items
+###KnnWith means: en la ponderación se resta la media del rating, y al final se suma la media general
+####KnnwithZscores: estandariza el rating restando media y dividiendo por desviación 
+####Knnbaseline: calculan el desvío de cada calificación con respecto al promedio y con base en esos calculan la ponderación
+
+
 
 for model in models:
  
@@ -121,25 +136,34 @@ gridsearchKNNWithMeans = GridSearchCV(KNNWithMeans, param_grid, measures=['rmse'
                                     
 gridsearchKNNWithMeans.fit(data)
 
+
 gridsearchKNNWithMeans.best_params["rmse"]
 gridsearchKNNWithMeans.best_score["rmse"]
+gs_model=gridsearchKNNWithMeans.best_estimator['rmse'] ### mejor estimador de gridsearch
 
 
 ################# Realizar predicciones
 
-trainset = data.build_full_trainset()
+trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento
+model=gs_model.fit(trainset) ## se entrena sobre todos los datos posibles
 
 
-sim_options       = {'name':'msd','min_support':5,'user_based':True}
-model = KNNWithMeans(sim_options=sim_options)
-model=model.fit(trainset)
+predset = trainset.build_anti_testset() ### crea una tabla con todos los usuarios y los libros que no han leido
+#### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
 
+predictions = model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
+### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
 
-predset = trainset.build_anti_testset() 
-predictions = model.test(predset) ### función muy pesada
-predictions_df = pd.DataFrame(predictions)
-prediction.shape
+predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
+predictions_df.shape
+predictions_df.head()
+predictions_df['r_ui'].unique() ### promedio de ratings
+predictions_df.sort_values(by='est',ascending=False)
 
+####### la predicción se puede hacer para un libro puntual
+model.predict(uid='31226', iid='0373825013',r_ui='2.42')
+
+##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
 def recomendaciones(user_id,n_recomend=10):
     
     predictions_userID = predictions_df[predictions_df['uid'] == user_id].\
@@ -154,9 +178,8 @@ def recomendaciones(user_id,n_recomend=10):
 
     return(recomendados)
 
-np.set_printoptions(threshold=sys.maxsize)
-predictions_df['uid'].unique()[:20] 
 
+ 
 us1=recomendaciones(user_id=179733,n_recomend=20)
 
 
