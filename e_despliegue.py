@@ -10,53 +10,41 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn import neighbors
 
 
-#############################################
-#### conectar_base_de_Datos#################
-############################################
+def preprocesar():
 
-conn=sql.connect('db_books2')
-cur=conn.cursor()
+    #### conectar_base_de_Datos#################
+    conn=sql.connect('db_books2')
+    cur=conn.cursor()
 
-######## convertir datos crudos a bases filtradas por usuarios que tengan cierto número de calificaciones
+    ######## convertir datos crudos a bases filtradas por usuarios que tengan cierto número de calificaciones
+    fn.ejecutar_sql('preprocesamientos.sql', cur)
 
-fn.ejecutar_sql('preprocesamientos.sql', cur)
+    ##### llevar datos que cambian constantemente a python ######
+    books=pd.read_sql('select * from books_final', conn )
+    ratings=pd.read_sql('select * from ratings_final', conn)
+    usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',conn)
 
-##### llevar datos que cambian constantemente a python ######
+    
+    #### transformación de datos crudos - Preprocesamiento ################
+    books['year_pub']=books.year_pub.astype('int')
 
-books=pd.read_sql('select * from books_final', conn )
-ratings=pd.read_sql('select * from ratings_final', conn)
-usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',conn)
+    ##### escalar para que año esté en el mismo rango ###
+    sc=MinMaxScaler()
+    books[["year_sc"]]=sc.fit_transform(books[['year_pub']])
 
+    ## eliminar filas que no se van a utilizar ###
+    books_dum1=books.drop(columns=['isbn','i_url','year_pub','book_title'])
 
-
-#######################################################################
-#### transformación de datos crudos - Preprocesamiento ################
-#######################################################################
-
-
-books['year_pub']=books.year_pub.astype('int')
-
-##### escalar para que año esté en el mismo rango ###
-
-sc=MinMaxScaler()
-books[["year_sc"]]=sc.fit_transform(books[['year_pub']])
-
-## eliminar filas que no se van a utilizar ###
-
-books_dum1=books.drop(columns=['isbn','i_url','year_pub','book_title'])
-books_dum1['book_author'].nunique()
-books_dum1['publisher'].nunique()
-
-col_dum=['book_author','publisher']
-books_dum2=pd.get_dummies(books_dum1,columns=col_dum)
-
+    col_dum=['book_author','publisher']
+    books_dum2=pd.get_dummies(books_dum1,columns=col_dum)
+    return books_dum2,books, conn, cur
 
 ##########################################################################
-###################Función para entrenar modelo por cada usuario ##########
-############################################################################
-
-
-def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
+###############Función para entrenar modelo por cada usuario ##########
+###############Basado en contenido todo lo visto por el usuario Knn#############################
+def recomendar(user_id):
+    
+    books_dum2, books, conn, cur= preprocesar()
     
     ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id})
     l_books_r=ratings['isbn'].to_numpy()
@@ -75,19 +63,28 @@ def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     ids=idlist[0]
     recomend_b=books.loc[ids][['book_title','isbn']]
-    leidos=books[books['isbn'].isin(l_books_r)][['book_title','isbn']]
+    
     
     return recomend_b
 
 
+##### Generar recomendaciones para usuario lista de usuarios ####
+##### No se hace para todos porque es muy pesado #############
+def main(list_user):
+    
+    recomendaciones_todos=pd.DataFrame()
+    for user_id in list_user:
+            
+        recomendaciones=recomendar(user_id)
+        recomendaciones["user_id"]=user_id
+        recomendaciones.reset_index(inplace=True,drop=True)
+        
+        recomendaciones_todos=pd.concat([recomendaciones_todos, recomendaciones])
 
-######################################################
-##### Generar base con recomendaciones por usuario ####
-########################################################
+    recomendaciones_todos.to_excel('D:\\cod\\marketing\\recomendaciones\\recomendaciones.xlsx')
+    recomendaciones_todos.to_csv('D:\\cod\\marketing\\recomendaciones\\recomendaciones.csv')
 
-user_id=52853
-recomendaciones=recomendar(52853)
-recomendaciones["user_id"]=user_id
 
-recomendaciones.to_excel('recomendaciones.xlsx',index=False)
-recomendaciones.to_csv('recomendaciones.csv',index=False)
+if __name__=="__main__":
+    list_user=[52853,31226,167471,8066 ]
+    main(list_user)
