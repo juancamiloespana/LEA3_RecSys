@@ -10,16 +10,17 @@ import a_funciones as fn
 
 ## crear copia de db_books datos originales, nombrarla books2 y procesar books2
 
-conn=sql.connect('db_books2') ### crear cuando no existe el nombre de cd  y para conectarse cuando sí existe.
+conn=sql.connect('data\\db_books2') ### crear cuando no existe el nombre de cd  y para conectarse cuando sí existe.
 cur=conn.cursor() ###para funciones que ejecutan sql en base de datos
 
 ### para verificar las tablas que hay disponibles
 cur.execute("SELECT name FROM sqlite_master where type='table' ")
 cur.fetchall()
 
+
+
 #######
 ############ traer tabla de BD a python ####
-
 
 books= pd.read_sql("""select *  from books""", conn)
 book_ratings = pd.read_sql('select * from book_ratings', conn)
@@ -78,7 +79,7 @@ fig.show()
 rating_users.describe()
 ### la mayoria de usarios tiene pocos libros calificados, pero los que más tiene tiene muchos
 
-#### filtrar usuarios con más de 50 libros calificados (para tener calificaion confiable) y los que tienen mas de mill porque pueden ser no razonables
+#### filtrar usuarios con más de 50 libros calificados (para tener calificaion confiable) y los que tienen mas de mil porque pueden ser no razonables
 rating_users2=pd.read_sql(''' select "User-Id" as user_id,
                          count(*) as cnt_rat
                          from book_ratings
@@ -155,39 +156,4 @@ ratings.info()
 ratings.head(10)
 
 ### tabla de full ratings se utilizara para modelos #####
-
-##### recomendaciones basado en popularidad ######
-
-#### mejores calificadas que tengan calificacion
-pd.read_sql("""select book_title, 
-            avg(book_rating) as avg_rat,
-            count(*) as read_num
-            from full_ratings
-            where book_rating<>0
-            group by book_title
-            order by avg_rat desc
-            limit 10
-            
-            """, conn)
-
-#### los mas leidos con promedio de los que calficaron ###
-pd.read_sql("""select book_title, 
-            avg(iif(book_rating = 0, Null, book_rating)) as avg_rat,
-            count(*) as read_num
-            from full_ratings
-            group by book_title
-            order by read_num desc
-            """, conn)
-
-
-#### los mejores calificados por año publicacion ###
-pd.read_sql("""select year_pub, book_title, 
-            avg(iif(book_rating = 0, Null, book_rating)) as avg_rat,
-            count(iif(book_rating = 0, Null, book_rating)) as rat_numb,
-            count(*) as read_num
-            from full_ratings
-            group by  year_pub, book_title
-            order by year_pub desc, avg_rat desc
-            """, conn)
-
 

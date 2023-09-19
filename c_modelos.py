@@ -7,13 +7,56 @@ from sklearn import neighbors ### basado en contenido un solo producto consumido
 
 #### conectar_base_de_Datos
 
-conn=sql.connect('db_books2')
+conn=sql.connect('data\\db_books2')
 cur=conn.cursor()
 
 #### ver tablas disponibles en base de datos ###
 
 cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
 cur.fetchall()
+
+
+######################################################################
+################## 1. sistemas basados en popularidad ###############
+#####################################################################
+
+
+##### recomendaciones basado en popularidad ######
+
+#### mejores calificadas que tengan calificacion
+pd.read_sql("""select book_title, 
+            avg(book_rating) as avg_rat,
+            count(*) as read_num
+            from full_ratings
+            where book_rating<>0
+            group by book_title
+            order by avg_rat desc
+            limit 10
+            
+            """, conn)
+
+#### los mas leidos con promedio de los que calficaron ###
+pd.read_sql("""select book_title, 
+            avg(iif(book_rating = 0, Null, book_rating)) as avg_rat,
+            count(*) as read_num
+            from full_ratings
+            group by book_title
+            order by read_num desc
+            """, conn)
+
+
+#### los mejores calificados por año publicacion ###
+pd.read_sql("""select year_pub, book_title, 
+            avg(iif(book_rating = 0, Null, book_rating)) as avg_rat,
+            count(iif(book_rating = 0, Null, book_rating)) as rat_numb,
+            count(*) as read_num
+            from full_ratings
+            group by  year_pub, book_title
+            order by year_pub desc, avg_rat desc
+            """, conn)
+
+
+
 
 #######################################################################
 ######## 2.1 Sistema de recomendación basado en contenido un solo producto - Manual ########

@@ -88,7 +88,7 @@ print(interact(recomendar))
 
 
 ############################################################################
-#####3.1 Sistema de recomendación filtro colaborativo basado en usuario #####
+#####3 Sistema de recomendación filtro colaborativo #####
 ############################################################################
 
 

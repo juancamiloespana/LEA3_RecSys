@@ -63,3 +63,22 @@ pd.read_sql("""select userId, avg(rating)
             group by userId order by userId asc""", conn)
 
 
+
+###################################################################################
+###################################################################################
+####codigo para separar género #############################################
+##########################################################################################
+
+
+import pandas as pd
+import sqlite3 as sql ### para conectarse a BD
+from mlxtend.preprocessing import TransactionEncoder
+
+conn= sql.connect('data\\db_movies')
+cur=conn.cursor()
+
+movies=pd.read_sql("""select * from movies""", conn)
+genres=movies['genres'].str.split('|')
+te = TransactionEncoder()
+genres = te.fit_transform(genres)
+genres = pd.DataFrame(genres, columns = te.columns_)
