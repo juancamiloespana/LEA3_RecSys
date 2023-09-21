@@ -45,7 +45,7 @@ on a."User-Id" =c.user_id;
 drop table if exists users_final;
 
 create table users_final as
-select a."User-ID"as user_id,
+select a."UserI-D"as user_id,
 a.Location as location,
 a.Age as age
 from users a

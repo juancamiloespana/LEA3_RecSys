@@ -18,7 +18,6 @@ cur.execute("SELECT name FROM sqlite_master where type='table' ")
 cur.fetchall()
 
 
-
 #######
 ############ traer tabla de BD a python ####
 

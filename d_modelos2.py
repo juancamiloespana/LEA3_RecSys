@@ -4,7 +4,7 @@ import sqlite3 as sql
 from sklearn.preprocessing import MinMaxScaler
 from ipywidgets import interact ## para análisis interactivo
 from sklearn import neighbors ### basado en contenido un solo producto consumido
-
+import joblib
 ####Paquete para sistemas de recomendación surprise
 ###Puede generar problemas en instalación local de pyhton. Genera error instalando con pip
 #### probar que les funcione para la próxima clase 
@@ -19,13 +19,8 @@ from surprise.model_selection import train_test_split
 #### conectar_base_de_Datos#################
 ############################################
 
-conn=sql.connect('db_books2')
+conn=sql.connect('data\\db_books2')
 cur=conn.cursor()
-
-#### ver tablas disponibles en base de datos ###
-
-cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
-cur.fetchall()
 
 
 #######################################################################
@@ -36,45 +31,49 @@ cur.fetchall()
 books=pd.read_sql('select * from books_final', conn )
 books['year_pub']=books.year_pub.astype('int')
 
-##### escalar para que año esté en el mismo rango ###
+##### cargar data frame escalado y con dummies ###
 
-sc=MinMaxScaler()
-books[["year_sc"]]=sc.fit_transform(books[['year_pub']])
+books_dum2= joblib.load('salidas\\books_dum2')
 
-## eliminar filas que no se van a utilizar ###
 
-books_dum1=books.drop(columns=['isbn','i_url','year_pub','book_title'])
-books_dum1['book_author'].nunique()
-books_dum1['publisher'].nunique()
+#### seleccionar usuario para recomendaciones ####
 
-col_dum=['book_author','publisher']
-books_dum2=pd.get_dummies(books_dum1,columns=col_dum)
-books_dum2.shape
 usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',conn)
 
-user_id=31226
+user_id=31226 ### para ejemplo manual
+
 def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     ###seleccionar solo los ratings del usuario seleccionado
     ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id})
+    
     ###convertir ratings del usuario a array
     l_books_r=ratings['isbn'].to_numpy()
     
     ###agregar la columna de isbn y titulo del libro a dummie para filtrar y mostrar nombre
     books_dum2[['isbn','book_title']]=books[['isbn','book_title']]
+    
+    ### filtrar libros calificados por el usuario
     books_r=books_dum2[books_dum2['isbn'].isin(l_books_r)]
+    
+    ## eliminar columna nombre e isbn
     books_r=books_r.drop(columns=['isbn','book_title'])
     books_r["indice"]=1 ### para usar group by y que quede en formato pandas tabla de centroide
+    ##centroide o perfil del usuario
     centroide=books_r.groupby("indice").mean()
     
     
+    ### filtrar libros no leídos
     books_nr=books_dum2[~books_dum2['isbn'].isin(l_books_r)]
+    ## eliminbar nombre e isbn
     books_nr=books_nr.drop(columns=['isbn','book_title'])
+    
+    ### entrenar modelo 
     model=neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
     model.fit(books_nr)
     dist, idlist = model.kneighbors(centroide)
     
-    ids=idlist[0]
+    ids=idlist[0] ### queda en un array anidado, para sacarlo
     recomend_b=books.loc[ids][['book_title','isbn']]
     leidos=books[books['isbn'].isin(l_books_r)][['book_title','isbn']]
     
@@ -91,19 +90,18 @@ print(interact(recomendar))
 #####3 Sistema de recomendación filtro colaborativo #####
 ############################################################################
 
+### datos originales en pandas
+## knn solo sirve para calificaciones explicitas
+ratings=pd.read_sql('select * from ratings_final where book_rating>0', conn)
 
-ratings=pd.read_sql('select * from ratings_final', conn)
-pd.read_sql('select avg(book_rating) from ratings_final', conn) ## promedio de ratings
-###### leer datos desde tabla de pandas
-reader = Reader(rating_scale=(0, 10))
 
+####los datos deben ser leidos en un formato espacial para surprise
+reader = Reader(rating_scale=(0, 10)) ### la escala de la calificación
 ###las columnas deben estar en orden estándar: user item rating
 data   = Dataset.load_from_df(ratings[['user_id','isbn','book_rating']], reader)
 
-### los datos se pueden cargar desde un dataframe al formato que reciben las funciones de surprise
 
 #####Existen varios modelos 
-
 models=[KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
 results = {}
 
@@ -113,10 +111,12 @@ results = {}
 ####Knnbaseline: calculan el desvío de cada calificación con respecto al promedio y con base en esos calculan la ponderación
 
 
+#### función para probar varios modelos ##########
 
 for model in models:
  
     CV_scores = cross_validate(model, data, measures=["MAE","RMSE"], cv=5, n_jobs=-1)  
+    
     result = pd.DataFrame.from_dict(CV_scores).mean(axis=0).\
              rename({'test_mae':'MAE', 'test_rmse': 'RMSE'})
     results[str(model).split("algorithms.")[1].split("object ")[0]] = result
@@ -125,11 +125,13 @@ for model in models:
 performance_df = pd.DataFrame.from_dict(results).T
 performance_df.sort_values(by='RMSE')
 
-
+###################se escoge el mejor knn withmeans#########################
 param_grid = { 'sim_options' : {'name': ['msd','cosine'], \
                                 'min_support': [5], \
                                 'user_based': [False, True]}
              }
+
+### se afina si es basado en usuario o basado en ítem
 
 gridsearchKNNWithMeans = GridSearchCV(KNNWithMeans, param_grid, measures=['rmse'], \
                                       cv=2, n_jobs=2)
@@ -142,16 +144,16 @@ gridsearchKNNWithMeans.best_score["rmse"]
 gs_model=gridsearchKNNWithMeans.best_estimator['rmse'] ### mejor estimador de gridsearch
 
 
-################# Realizar predicciones
+################# Entrenar con todos los datos y Realizar predicciones con el modelo afinado
 
-trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento
-model=gs_model.fit(trainset) ## se entrena sobre todos los datos posibles
-
+trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento, las funciones anteriores dividen  en entrenamiento y evaluación
+model=gs_model.fit(trainset) ## se reentrena sobre todos los datos posibles (sin dividir)
 
 predset = trainset.build_anti_testset() ### crea una tabla con todos los usuarios y los libros que no han leido
 #### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
+len(predset)
 
-predictions = model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
+predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
 ### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
 
 predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
@@ -162,6 +164,8 @@ predictions_df.sort_values(by='est',ascending=False)
 
 ####### la predicción se puede hacer para un libro puntual
 model.predict(uid='31226', iid='0373825013',r_ui='2.42')
+
+
 
 ##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
 def recomendaciones(user_id,n_recomend=10):
@@ -180,6 +184,6 @@ def recomendaciones(user_id,n_recomend=10):
 
 
  
-us1=recomendaciones(user_id=179733,n_recomend=20)
+recomendaciones(user_id=179733,n_recomend=20)
 
 
