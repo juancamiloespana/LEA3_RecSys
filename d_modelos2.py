@@ -24,16 +24,16 @@ cur=conn.cursor()
 
 
 #######################################################################
-#### 2.2 Sistema de recomendación basado en contenido KNN #################
+#### 3 Sistema de recomendación basado en contenido KNN #################
 #### Con base en todo lo visto por el usuario #######################
 #######################################################################
 
-books=pd.read_sql('select * from books_final', conn )
+books=pd.read_sql('select * from book_ratings', conn )
 books['year_pub']=books.year_pub.astype('int')
 
 ##### cargar data frame escalado y con dummies ###
 
-books_dum2= joblib.load('salidas\\books_dum2')
+books_dum2= joblib.load('salidas\\books_dum2.joblib')
 
 
 #### seleccionar usuario para recomendaciones ####
@@ -41,6 +41,7 @@ books_dum2= joblib.load('salidas\\books_dum2')
 usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',conn)
 
 user_id=31226 ### para ejemplo manual
+
 
 def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
@@ -87,7 +88,7 @@ print(interact(recomendar))
 
 
 ############################################################################
-#####3 Sistema de recomendación filtro colaborativo #####
+#####4 Sistema de recomendación filtro colaborativo #####
 ############################################################################
 
 ### datos originales en pandas
@@ -112,7 +113,7 @@ results = {}
 
 
 #### función para probar varios modelos ##########
-
+model=models[1]
 for model in models:
  
     CV_scores = cross_validate(model, data, measures=["MAE","RMSE"], cv=5, n_jobs=-1)  
@@ -163,8 +164,7 @@ predictions_df['r_ui'].unique() ### promedio de ratings
 predictions_df.sort_values(by='est',ascending=False)
 
 ####### la predicción se puede hacer para un libro puntual
-model.predict(uid='31226', iid='0373825013',r_ui='2.42')
-
+model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
 
 
 ##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
@@ -184,6 +184,6 @@ def recomendaciones(user_id,n_recomend=10):
 
 
  
-recomendaciones(user_id=179733,n_recomend=20)
+recomendaciones(user_id=179733,n_recomend=10)
 
 

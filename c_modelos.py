@@ -87,7 +87,7 @@ col_dum=['book_author','publisher']
 books_dum2=pd.get_dummies(books_dum1,columns=col_dum)
 books_dum2.shape
 
-joblib.dump(books_dum2,"salidas\\books_dum2") ### para utilizar en segundos modelos
+joblib.dump(books_dum2,"salidas\\books_dum2.joblib") ### para utilizar en segundos modelos
 
 
 
@@ -133,11 +133,13 @@ distancias=pd.DataFrame(dist) ## devuelve un ranking de la distancias más cerca
 id_list=pd.DataFrame(idlist) ## para saber esas distancias a que item corresponde
 
 
+
 ####ejemplo para un libro
 book_list_name = []
-book_name='Violets Are Blue'
+book_name='2nd Chance'
 book_id = books[books['book_title'] == book_name].index ### extraer el indice del libro
 book_id = book_id[0] ## si encuentra varios solo guarde uno
+
 for newid in idlist[book_id]:
         book_list_name.append(books.loc[newid].book_title) ### agrega el nombre de cada una de los id recomendados
 

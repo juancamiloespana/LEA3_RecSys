@@ -7,9 +7,9 @@ drop table if exists usuarios_sel;
 
 create table usuarios_sel as 
 
-select "User-Id" as user_id, count(*) as cnt_rat
+select "User-ID" as user_id, count(*) as cnt_rat
 from book_ratings
-group by "User-Id"
+group by "User-ID"
 having cnt_rat >50 and cnt_rat <= 1000
 order by cnt_rat desc ;
 
@@ -40,17 +40,17 @@ from book_ratings a
 inner join books_sel b
 on a.ISBN =b.ISBN
 inner join usuarios_sel c
-on a."User-Id" =c.user_id;
+on a."User-ID" =c.user_id;
 
 drop table if exists users_final;
 
 create table users_final as
-select a."UserI-D"as user_id,
+select a."User-ID"as user_id,
 a.Location as location,
 a.Age as age
 from users a
 inner join usuarios_sel c
-on a."User-Id" =c.user_id;
+on a."User-ID" =c.user_id;
 
 drop table if exists books_final;
 

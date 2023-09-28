@@ -13,11 +13,12 @@ from sklearn import neighbors
 def preprocesar():
 
     #### conectar_base_de_Datos#################
-    conn=sql.connect('db_books2')
+    conn=sql.connect('C:\\cod\\LEA3_RecSys\\data\\db_books2')
     cur=conn.cursor()
+    
 
     ######## convertir datos crudos a bases filtradas por usuarios que tengan cierto número de calificaciones
-    fn.ejecutar_sql('preprocesamientos.sql', cur)
+    fn.ejecutar_sql('C:\\cod\\LEA3_RecSys\\preprocesamientos.sql', cur)
 
     ##### llevar datos que cambian constantemente a python ######
     books=pd.read_sql('select * from books_final', conn )
@@ -81,10 +82,14 @@ def main(list_user):
         
         recomendaciones_todos=pd.concat([recomendaciones_todos, recomendaciones])
 
-    recomendaciones_todos.to_excel('D:\\cod\\marketing\\recomendaciones\\recomendaciones.xlsx')
-    recomendaciones_todos.to_csv('D:\\cod\\marketing\\recomendaciones\\recomendaciones.csv')
+    recomendaciones_todos.to_excel('C:\\cod\\LEA3_RecSys\\salidas\\reco\\recomendaciones.xlsx')
+    recomendaciones_todos.to_csv('C:\\cod\\LEA3_RecSys\\salidas\\reco\\recomendaciones.csv')
 
 
 if __name__=="__main__":
     list_user=[52853,31226,167471,8066 ]
     main(list_user)
+    
+
+import sys
+sys.executable
