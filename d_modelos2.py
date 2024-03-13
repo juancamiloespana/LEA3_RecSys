@@ -23,6 +23,8 @@ conn=sql.connect('data\\db_books2')
 cur=conn.cursor()
 
 
+pd.read_sql("select isbn, count(*) cnt from book_ratings group by isbn order by cnt desc", conn)
+
 #######################################################################
 #### 3 Sistema de recomendación basado en contenido KNN #################
 #### Con base en todo lo visto por el usuario #######################
