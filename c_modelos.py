@@ -129,9 +129,9 @@ model = neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
 model.fit(books_dum2)
 dist, idlist = model.kneighbors(books_dum2)
 
+
 distancias=pd.DataFrame(dist) ## devuelve un ranking de la distancias más cercanas para cada fila(libro)
 id_list=pd.DataFrame(idlist) ## para saber esas distancias a que item corresponde
-
 
 
 ####ejemplo para un libro
