@@ -30,7 +30,7 @@ pd.read_sql("select isbn, count(*) cnt from book_ratings group by isbn order by 
 #### Con base en todo lo visto por el usuario #######################
 #######################################################################
 
-books=pd.read_sql('select * from book_ratings', conn )
+books=pd.read_sql('select * from books_final', conn )
 books['year_pub']=books.year_pub.astype('int')
 
 ##### cargar data frame escalado y con dummies ###
@@ -48,7 +48,7 @@ user_id=31226 ### para ejemplo manual
 def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     ###seleccionar solo los ratings del usuario seleccionado
-    ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id})
+    ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id,})
     
     ###convertir ratings del usuario a array
     l_books_r=ratings['isbn'].to_numpy()
@@ -114,7 +114,7 @@ results = {}
 ####Knnbaseline: calculan el desvío de cada calificación con respecto al promedio y con base en esos calculan la ponderación
 
 
-#### función para probar varios modelos ##########
+#### for para probar varios modelos ##########
 model=models[1]
 for model in models:
  
@@ -130,14 +130,17 @@ performance_df.sort_values(by='RMSE')
 
 ###################se escoge el mejor knn withmeans#########################
 param_grid = { 'sim_options' : {'name': ['msd','cosine'], \
-                                'min_support': [5], \
+                                'min_support': [5,2], \
                                 'user_based': [False, True]}
              }
+
+## min support es la cantidad de items o usuarios que necesita para calcular recomendación
+## name medidas de distancia
 
 ### se afina si es basado en usuario o basado en ítem
 
 gridsearchKNNWithMeans = GridSearchCV(KNNWithMeans, param_grid, measures=['rmse'], \
-                                      cv=2, n_jobs=2)
+                                      cv=2, n_jobs=-1)
                                     
 gridsearchKNNWithMeans.fit(data)
 
@@ -152,6 +155,8 @@ gs_model=gridsearchKNNWithMeans.best_estimator['rmse'] ### mejor estimador de gr
 trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento, las funciones anteriores dividen  en entrenamiento y evaluación
 model=gs_model.fit(trainset) ## se reentrena sobre todos los datos posibles (sin dividir)
 
+
+
 predset = trainset.build_anti_testset() ### crea una tabla con todos los usuarios y los libros que no han leido
 #### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
 len(predset)
@@ -159,14 +164,14 @@ len(predset)
 predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
 ### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
 
+####### la predicción se puede hacer para un libro puntual
+model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
+
 predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
 predictions_df.shape
 predictions_df.head()
 predictions_df['r_ui'].unique() ### promedio de ratings
 predictions_df.sort_values(by='est',ascending=False)
-
-####### la predicción se puede hacer para un libro puntual
-model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
 
 
 ##### funcion para recomendar los 10 libros con mejores predicciones y llevar base de datos para consultar resto de información
@@ -186,6 +191,6 @@ def recomendaciones(user_id,n_recomend=10):
 
 
  
-recomendaciones(user_id=179733,n_recomend=10)
+recomendaciones(user_id=55490,n_recomend=10)
 
 
