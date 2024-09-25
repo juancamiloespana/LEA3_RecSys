@@ -4,6 +4,7 @@ import sqlite3 as sql
 import plotly.graph_objs as go ### para gráficos
 import plotly.express as px
 import a_funciones as fn
+import matplotlib.pyplot as plt
 
 ###pip install  pysqlite3
 
@@ -13,11 +14,12 @@ import a_funciones as fn
 
 conn=sql.connect('data\\db_books2') ### crear cuando no existe el nombre de cd  y para conectarse cuando sí existe.
 cur=conn.cursor() ###para funciones que ejecutan sql en base de datos
-
+#conn.close() ### cerrar conexion base de datos
 
 ### para verificar las tablas que hay disponibles
 cur.execute("SELECT name FROM sqlite_master where type='table' ")
 cur.fetchall()
+
 
 #####Exploración inicial #####
 
@@ -32,6 +34,7 @@ cr=pd.read_sql(""" select
                           order by conteo desc""", conn)
 ###Nombres de columnas con numeros o guiones se deben poner en doble comilla para que se reconozcan
 
+pd.read_sql("select count(*) from book_ratings", conn)
 
 data  = go.Bar( x=cr.rating,y=cr.conteo, text=cr.conteo, textposition="outside")
 Layout=go.Layout(title="Count of ratings",xaxis={'title':'Rating'},yaxis={'title':'Count'})
@@ -49,8 +52,10 @@ rating_users=pd.read_sql(''' select "User-Id" as user_id,
                          order by cnt_rat asc
                          ''',conn )
 
-fig  = px.histogram(rating_users, x= 'cnt_rat', title= 'Hist frecuencia de numero de calificaciones por usario')
-fig.show() 
+plt.hist(rating_users['cnt_rat'], bins=10, color='skyblue', edgecolor='black')
+plt.title('Hist frecuencia de número de calificaciones por usuario')
+plt.xlabel('Número de calificaciones')
+plt.ylabel('Frecuencia')
 
 
 rating_users.describe()
@@ -71,8 +76,10 @@ rating_users2.describe()
 
 
 ### graficar distribucion despues de filtrar datos
-fig  = px.histogram(rating_users2, x= 'cnt_rat', title= 'Hist frecuencia de numero de calificaciones por usario')
-fig.show() 
+plt.hist(rating_users2['cnt_rat'], bins=10, color='skyblue', edgecolor='black')
+plt.title('Hist frecuencia de número de calificaciones por usuario')
+plt.xlabel('Número de calificaciones')
+plt.ylabel('Frecuencia')
 
 
 #### verificar cuantas calificaciones tiene cada libro
@@ -87,9 +94,10 @@ rating_books=pd.read_sql(''' select ISBN ,
 rating_books.describe()
 
 ### graficar distribucion
+fig  = plt.hist(rating_books['cnt_rat'])
+ 
 
-fig  = px.histogram(rating_books, x= 'cnt_rat', title= 'Hist frecuencia de numero de calificaciones para cada libro')
-fig.show()  
+
 ####Excluir libros que no tengan más de 50 calificaciones 
 rating_books2=pd.read_sql(''' select ISBN ,
                          count(*) as cnt_rat
@@ -100,8 +108,7 @@ rating_books2=pd.read_sql(''' select ISBN ,
                          ''',conn )
 
 rating_books2.describe()
-fig  = px.histogram(rating_books2, x= 'cnt_rat', title= 'Hist frecuencia de numero de calificaciones para cada libro')
-fig.show()
+fig  = plt.hist(rating_books2['cnt_rat'])
 
 ###########
 fn.ejecutar_sql('preprocesamientos.sql', cur)

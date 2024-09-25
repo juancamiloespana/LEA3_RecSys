@@ -51,7 +51,7 @@ pd.read_sql("""select year_pub, book_title,
             count(*) as read_num
             from full_ratings
             group by  year_pub, book_title
-            order by year_pub desc, avg_rat desc limit 20
+            order by year_pub desc, avg_rat desc limit 10
             """, conn)
 
 
