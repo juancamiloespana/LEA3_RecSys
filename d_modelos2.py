@@ -23,23 +23,26 @@ conn=sql.connect('data\\db_books2')
 cur=conn.cursor()
 
 
-pd.read_sql("select isbn, count(*) cnt from book_ratings group by isbn order by cnt desc", conn)
+
+
 
 #######################################################################
 #### 3 Sistema de recomendación basado en contenido KNN #################
 #### Con base en todo lo visto por el usuario #######################
 #######################################################################
 
-books=pd.read_sql('select * from books_final', conn )
-books['year_pub']=books.year_pub.astype('int')
+
 
 ##### cargar data frame escalado y con dummies ###
-
 books_dum2= joblib.load('salidas\\books_dum2.joblib')
+
+### carga data frame normal que tiene nombres de libros
+books=pd.read_sql('select * from books_final', conn )
+#books['year_pub']=books.year_pub.astype('int')
+
 
 
 #### seleccionar usuario para recomendaciones ####
-
 usuarios=pd.read_sql('select distinct (user_id) as user_id from ratings_final',conn)
 
 user_id=31226 ### para ejemplo manual
@@ -99,7 +102,7 @@ ratings=pd.read_sql('select * from ratings_final where book_rating>0', conn)
 
 
 ####los datos deben ser leidos en un formato espacial para surprise
-reader = Reader(rating_scale=(0, 10)) ### la escala de la calificación
+reader = Reader(rating_scale=(1, 10)) ### la escala de la calificación
 ###las columnas deben estar en orden estándar: user item rating
 data   = Dataset.load_from_df(ratings[['user_id','isbn','book_rating']], reader)
 
@@ -161,9 +164,10 @@ predset = trainset.build_anti_testset() ### crea una tabla con todos los usuario
 #### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
 len(predset)
 
+
 predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
 ### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
-
+predictions[0:10] 
 ####### la predicción se puede hacer para un libro puntual
 model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
 

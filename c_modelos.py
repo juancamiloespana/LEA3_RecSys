@@ -94,9 +94,10 @@ joblib.dump(books_dum2,"salidas\\books_dum2.joblib") ### para utilizar en segund
 ###### libros recomendadas ejemplo para un libro#####
 
 libro='The Testament'
-ind_libro=books[books['book_title']==libro].index.values.astype(int)[0]
-similar_books=books_dum2.corrwith(books_dum2.iloc[ind_libro,:],axis=1)
-similar_books=similar_books.sort_values(ascending=False)
+ind_libro=books[books['book_title']==libro].index.values.astype(int)[0] ### indice del libro en dataframe escalado y dummificado
+row_sel_book =books_dum2.iloc[ind_libro,:] ### seleccionar fila de caracteristicas de libro seleccionados
+similar_books=books_dum2.corrwith(row_sel_book,axis=1) ##calcular correlación de catalogo vs libro seleccionado
+similar_books=similar_books.sort_values(ascending=False) ### ordener libros de mayor a menor correlación
 top_similar_books=similar_books.to_frame(name="correlación").iloc[0:11,] ### el 11 es número de libros recomendados
 top_similar_books['book_title']=books["book_title"] ### agregaro los nombres (como tiene mismo indice no se debe cruzar)
     
@@ -125,7 +126,7 @@ print(interact(recomendacion))
 ##### ### entrenar modelo #####
 
 ## el coseno de un angulo entre dos vectores es 1 cuando son perpendiculares y 0 cuando son paralelos(indicando que son muy similar324e-06	3.336112e-01	3.336665e-01	3.336665e-es)
-model = neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
+model = neighbors.NearestNeighbors(n_neighbors=11, metric='euclidian')
 model.fit(books_dum2)
 dist, idlist = model.kneighbors(books_dum2)
 
@@ -136,7 +137,7 @@ id_list=pd.DataFrame(idlist) ## para saber esas distancias a que item correspond
 
 ####ejemplo para un libro
 book_list_name = []
-book_name='2nd Chance'
+book_name='Hannibal'
 book_id = books[books['book_title'] == book_name].index ### extraer el indice del libro
 book_id = book_id[0] ## si encuentra varios solo guarde uno
 
