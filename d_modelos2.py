@@ -5,6 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from ipywidgets import interact ## para análisis interactivo
 from sklearn import neighbors ### basado en contenido un solo producto consumido
 import joblib
+
 ####Paquete para sistemas de recomendación surprise
 ###Puede generar problemas en instalación local de pyhton. Genera error instalando con pip
 #### probar que les funcione para la próxima clase 
@@ -51,7 +52,7 @@ user_id=31226 ### para ejemplo manual
 def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     ###seleccionar solo los ratings del usuario seleccionado
-    ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id,})
+    ratings=pd.read_sql('select *from ratings_final where user_id=:user',conn, params={'user':user_id})
     
     ###convertir ratings del usuario a array
     l_books_r=ratings['isbn'].to_numpy()
@@ -99,7 +100,7 @@ print(interact(recomendar))
 ### datos originales en pandas
 ## knn solo sirve para calificaciones explicitas
 ratings=pd.read_sql('select * from ratings_final where book_rating>0', conn)
-
+ratings
 
 ####los datos deben ser leidos en un formato espacial para surprise
 reader = Reader(rating_scale=(1, 10)) ### la escala de la calificación
@@ -158,18 +159,26 @@ gs_model=gridsearchKNNWithMeans.best_estimator['rmse'] ### mejor estimador de gr
 trainset = data.build_full_trainset() ### esta función convierte todos los datos en entrnamiento, las funciones anteriores dividen  en entrenamiento y evaluación
 model=gs_model.fit(trainset) ## se reentrena sobre todos los datos posibles (sin dividir)
 
+####
 
+joblib.dump(model,'salidas\\recom_model.joblib')
+
+#####
+model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
+
+
+####predecir para todos los libros que los usuarios no han leido
 
 predset = trainset.build_anti_testset() ### crea una tabla con todos los usuarios y los libros que no han leido
 #### en la columna de rating pone el promedio de todos los rating, en caso de que no pueda calcularlo para un item-usuario
 len(predset)
+predset[0:10]
 
 
 predictions = gs_model.test(predset) ### función muy pesada, hace las predicciones de rating para todos los libros que no hay leido un usuario
 ### la funcion test recibe un test set constriuido con build_test method, o el que genera crosvalidate
 predictions[0:10] 
 ####### la predicción se puede hacer para un libro puntual
-model.predict(uid=269397, iid='0446353205',r_ui='') ### uid debía estar en número e isb en comillas
 
 predictions_df = pd.DataFrame(predictions) ### esta tabla se puede llevar a una base donde estarán todas las predicciones
 predictions_df.shape
@@ -195,6 +204,6 @@ def recomendaciones(user_id,n_recomend=10):
 
 
  
-recomendaciones(user_id=55490,n_recomend=10)
+recomendaciones(user_id=55490,n_recomend=600)
 
 

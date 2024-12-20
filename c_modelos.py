@@ -126,7 +126,7 @@ print(interact(recomendacion))
 ##### ### entrenar modelo #####
 
 ## el coseno de un angulo entre dos vectores es 1 cuando son perpendiculares y 0 cuando son paralelos(indicando que son muy similar324e-06	3.336112e-01	3.336665e-01	3.336665e-es)
-model = neighbors.NearestNeighbors(n_neighbors=11, metric='euclidian')
+model = neighbors.NearestNeighbors(n_neighbors=11, metric='euclidean')
 model.fit(books_dum2)
 dist, idlist = model.kneighbors(books_dum2)
 
