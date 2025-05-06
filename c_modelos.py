@@ -6,6 +6,7 @@ from ipywidgets import interact ## para análisis interactivo
 from sklearn import neighbors ### basado en contenido un solo producto consumido
 import joblib
 #### conectar_base_de_Datos
+#!pip install ipywidgets
 
 conn=sql.connect('data\\db_books2')
 cur=conn.cursor()
@@ -30,6 +31,7 @@ pd.read_sql("""select book_title,
             from full_ratings
             where book_rating<>0
             group by book_title
+            having read_num>20
             order by avg_rat desc
             limit 10
             """, conn)
