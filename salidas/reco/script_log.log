@@ -1,0 +1,24 @@
+2025-05-07 11:10:11,835 - INFO - Conexión a la base de datos establecida.
+2025-05-07 11:10:20,857 - INFO - Ejecución de SQL para filtrar libros y ratings completada.
+2025-05-07 11:10:21,101 - INFO - Preprocesamiento de datos completado.
+2025-05-07 11:10:21,115 - INFO - Generando recomendaciones para el usuario 52853.
+2025-05-07 11:10:21,143 - INFO - Recomendaciones para el usuario 52853 finalizadas
+2025-05-07 11:10:21,153 - INFO - Generando recomendaciones para el usuario 31226.
+2025-05-07 11:10:21,182 - INFO - Recomendaciones para el usuario 31226 finalizadas
+2025-05-07 11:10:21,192 - INFO - Generando recomendaciones para el usuario 167471.
+2025-05-07 11:10:21,221 - INFO - Recomendaciones para el usuario 167471 finalizadas
+2025-05-07 11:10:21,230 - INFO - Generando recomendaciones para el usuario 8066.
+2025-05-07 11:10:21,261 - INFO - Recomendaciones para el usuario 8066 finalizadas
+2025-05-07 11:10:21,340 - INFO - Recomendaciones generadas y guardadas en Excel y CSV.
+2025-05-07 11:15:32,692 - INFO - Conexión a la base de datos establecida.
+2025-05-07 11:15:42,530 - INFO - Ejecución de SQL para filtrar libros y ratings completada.
+2025-05-07 11:15:42,722 - INFO - Preprocesamiento de datos completado.
+2025-05-07 11:15:42,735 - INFO - Generando recomendaciones para el usuario 52853.
+2025-05-07 11:15:42,760 - INFO - Recomendaciones para el usuario 52853 finalizadas
+2025-05-07 11:15:42,770 - INFO - Generando recomendaciones para el usuario 31226.
+2025-05-07 11:15:42,796 - INFO - Recomendaciones para el usuario 31226 finalizadas
+2025-05-07 11:15:42,806 - INFO - Generando recomendaciones para el usuario 167471.
+2025-05-07 11:15:42,835 - INFO - Recomendaciones para el usuario 167471 finalizadas
+2025-05-07 11:15:42,844 - INFO - Generando recomendaciones para el usuario 8066.
+2025-05-07 11:15:42,871 - INFO - Recomendaciones para el usuario 8066 finalizadas
+2025-05-07 11:15:42,938 - INFO - Recomendaciones generadas y guardadas en Excel y CSV.
