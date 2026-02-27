@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn import neighbors
 
 import logging
-from tqdm import tqdm
+
 
 # Conffiguración del logg
 logging.basicConfig(
@@ -109,7 +109,7 @@ def main(list_user):
     recomendaciones_todos=pd.DataFrame()
 
     books_dum2, books, conn, cur= preprocesar(conn, cur)
-    for user_id in tqdm(list_user):
+    for user_id in list_user:
             
         recomendaciones=recomendar(user_id, conn, cur, books_dum2, books)
         recomendaciones["user_id"]=user_id
